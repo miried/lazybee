@@ -1,8 +1,8 @@
 CC = clang++
 
-EXECUTABLE = engine
-SOURCES = main.cpp files.cpp bsploader.cpp
-HEADERS = main.h files.h bsploader.h
+EXECUTABLE = lazybee
+SOURCES = main.cpp files.cpp bspmap.cpp
+HEADERS = main.h files.h bspmap.h
 
 INCLUDE = include
 LIB = lib

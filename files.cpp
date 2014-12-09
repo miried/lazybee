@@ -27,3 +27,13 @@ size_t filestream::read( void *buffer, size_t size )
 		bytes_read = 0;
 	return bytes_read;
 }
+
+void filestream::seek( long int offset, bool relative )
+{
+	if (fp==NULL)
+		return;
+	if (relative==false)
+		fseek( fp, offset, SEEK_SET );
+	else
+		fseek( fp, offset, SEEK_CUR );
+}

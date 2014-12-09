@@ -4,7 +4,7 @@
 
 #include <cstdarg>
 #include "main.h"
-#include "bsploader.h"
+#include "bspmap.h"
 
 void con_printf( const char *string, ... )
 {
