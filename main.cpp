@@ -16,7 +16,10 @@ void con_printf( const char *string, ... )
 
 int main( int argc, char *argv[] )
 {
-	bspmap *map = new bspmap("mohdm2.bsp");
-
+	bspmap *dm2map = new bspmap("mohdm2.bsp");
+	
+	con_printf( "successful!\n" );
+	
+	delete dm2map;
 	return EXIT_SUCCESS;
 }

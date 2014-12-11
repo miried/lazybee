@@ -14,6 +14,8 @@
 // Global engine headers
 #include "files.h"
 
+typedef float vec3[3];
+
 // main.cpp
 void con_printf( const char *string, ... );
 

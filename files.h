@@ -8,8 +8,6 @@
 class filestream
 {
 public:
-	void open( const char* fname );
-	void close( void );
 	size_t read( void *buffer, size_t size );
 	void seek( long int offset, bool relative=false );
 	filestream( const char* fname = NULL, size_t size = BUFSIZ )
@@ -23,6 +21,9 @@ public:
 			close();
 	}
 protected:
+	void open( const char* fname );
+	void close( void );
+	// vars
 	FILE *fp = NULL;
 	void *int_buffer;
 };
