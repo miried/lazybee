@@ -49,10 +49,10 @@ typedef struct lump_s {
 } lump_s;
 
 typedef struct dleaf_s {
-	uint32_t	cluster;			// -1 = opaque cluster (do I still store these?)
+	uint32_t	cluster;
 	uint32_t	area;
 
-	uint32_t	mins[3];			// for frustum culling
+	uint32_t	mins[3];
 	uint32_t	maxs[3];
 
 	uint32_t	firstLeafSurface;
@@ -84,7 +84,7 @@ typedef struct dsurface_s {
 	uint32_t	lightmapWidth, lightmapHeight;
 
 	vec3		lightmapOrigin;
-	vec3		lightmapVecs[3];	// for patches, [0] and [1] are lodbounds
+	vec3		lightmapVecs[3];
 
 	uint32_t	patchWidth;
 	uint32_t	patchHeight;
@@ -97,8 +97,7 @@ class bspmap
 public:
 	bspmap( const char* mname )
 	{
-		if (mname!=NULL)
-			open(mname);
+		if (mname!=NULL) open(mname);
 	}
 	~bspmap()
 	{
@@ -119,15 +118,15 @@ protected:
 	char		*entityString;
 
 	dleaf_s		*leafs;
-	int			numleafs;
-	int			numclusters;
-	int			numareas;
+	int		numleafs;
+	int		numclusters;
+	int		numareas;
 
 	uint32_t	*leafsurfaces;
-	int			numleafsurfaces;
+	int		numleafsurfaces;
 
 	dsurface_s	*surfaces;
-	int			numsurfaces;
+	int		numsurfaces;
 };
 
 #endif // BSPMAP_H

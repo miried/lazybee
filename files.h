@@ -12,13 +12,11 @@ public:
 	void seek( long int offset, bool relative=false );
 	filestream( const char* fname = NULL, size_t size = BUFSIZ )
 	{
-		if (fname!=NULL)
-			open(fname);
+		if (fname!=NULL) open(fname);
 	}
 	~filestream()
 	{
-		if (fp)
-			close();
+		if (fp) close();
 	}
 protected:
 	void open( const char* fname );
