@@ -14,6 +14,7 @@
 // Global engine headers
 #include "files.h"
 
+typedef unsigned int uint_t;
 typedef float vec3[3];
 
 // main.cpp

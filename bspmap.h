@@ -5,13 +5,16 @@
 #ifndef BSPMAP_H
 #define BSPMAP_H
 
-typedef struct bspheader_s {
+#define	LIGHTMAP_SIZE		128
+#define LIGHTMAP_BLOCK_LEN	(LIGHTMAP_SIZE*LIGHTMAP_SIZE*3)
+
+typedef struct {
 	char		id[4];
 	uint32_t	version;
 	uint32_t	checksum;
 } bspheader_s;
 
-typedef enum lumpdefs_s {
+typedef enum {
 	lump_shaders = 0,
 	lump_planes = 1,
 	lump_lightmaps = 2,
@@ -41,14 +44,27 @@ typedef enum lumpdefs_s {
 	lump_staticmodelindexes = 26,
 	lump_unknown = 27,
 	lump_max = 28
-} lumpdefs_s;
+} lumpdefs_e;
 
-typedef struct lump_s {
+typedef struct {
 	uint32_t	offset;
 	uint32_t	length;
 } lump_s;
 
-typedef struct dleaf_s {
+typedef struct {
+	char		shader[64];
+	uint32_t	surfaceFlags;
+	uint32_t	contentFlags;
+	uint32_t	subdivisions;
+	char		fenceMaskImage[64];
+} dshader_s;
+
+typedef struct {
+	float		normal[3];
+	float		dist;
+} dplane_s;
+
+typedef struct {
 	uint32_t	cluster;
 	uint32_t	area;
 
@@ -68,7 +84,7 @@ typedef struct dleaf_s {
 	uint32_t	numStaticModels;
 } dleaf_s;
 
-typedef struct dsurface_s {
+typedef struct {
 	uint32_t	shaderNum;
 	uint32_t	fogNum;
 	uint32_t	surfaceType;
@@ -83,14 +99,23 @@ typedef struct dsurface_s {
 	uint32_t	lightmapX, lightmapY;
 	uint32_t	lightmapWidth, lightmapHeight;
 
-	vec3		lightmapOrigin;
-	vec3		lightmapVecs[3];
+	float		lightmapOrigin[3];
+	float		lightmapVecs[3][3];
 
 	uint32_t	patchWidth;
 	uint32_t	patchHeight;
 
 	float		subdivisions;
 } dsurface_s;
+
+typedef struct {
+	// int
+	lumpdefs_e	lumptype;
+	uint_t		blocksize;
+	// out
+	uint_t		*numblocks;
+	void		**ptr;
+} lumpdata_s;
 
 class bspmap
 {
@@ -106,27 +131,31 @@ public:
 protected:
 	void open( const char* mname );
 	void close( void );
-	void lump_loadentities( void );
-	void lump_loadleafs( void );
-	void lump_loadleafsurfaces( void );
-	void lump_loadsurfaces( void );
+	
+	void load_lump( lumpdata_s *lump );
+	void load_all_lumps( void );
 	// vars
 	filestream	*mapfile;
 	bspheader_s	header;
 	lump_s		lumps[lump_max];
-	// mapdata
-	char		*entityString;
-
+	// allocated
+	char		*entitystring;
 	dleaf_s		*leafs;
-	int		numleafs;
-	int		numclusters;
-	int		numareas;
-
 	uint32_t	*leafsurfaces;
-	int		numleafsurfaces;
-
 	dsurface_s	*surfaces;
-	int		numsurfaces;
+	dshader_s	*shaders;
+	uint8_t		*lightmapdata;
+	dplane_s	*planes;
+	// counters
+	uint_t		numshaders;
+	uint_t		entitystringlen;
+	uint_t		numleafs;
+	uint_t		numclusters;
+	uint_t		numareas;
+	uint_t		numleafsurfaces;
+	uint_t		numsurfaces;
+	uint_t		numlightmaps;
+	uint_t		numplanes;
 };
 
 #endif // BSPMAP_H

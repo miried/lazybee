@@ -5,45 +5,87 @@
 #include "main.h"
 #include "bspmap.h"
 
-void bspmap::lump_loadentities( void )
+
+void bspmap::load_lump( lumpdata_s *lump )
 {
 	// seek the lump
 	uint32_t offset, length;
 
-	offset = lumps[lump_entities].offset;
-	length = lumps[lump_entities].length;
-
-	mapfile->seek( offset );
-
-	// the string should be 0-terminated but we'll make sure
-	entityString = new char[length+1];
-	entityString[length] = 0;
-	
-	// read the lump
-	mapfile->read( entityString, length );
-}
-
-void bspmap::lump_loadleafs( void )
-{
-	// seek the lump
-	uint32_t offset, length;
-
-	offset = lumps[lump_leafs].offset;
-	length = lumps[lump_leafs].length;
+	offset = lumps[lump->lumptype].offset;
+	length = lumps[lump->lumptype].length;
 
 	// sanity check
-	if (length % sizeof(dleaf_s)) {
-		con_printf( "weird leaf lump size!\n" );
+	if (length % lump->blocksize) {
+		con_printf( "weird size in lump %i!\n", lump->lumptype );
+		con_printf( "blocksize %i for length %i\n", lump->blocksize, length );
+		*lump->numblocks = 0;
+		*lump->ptr = NULL;
 		return;
 	}
 
+	*lump->numblocks = length / lump->blocksize;
+	*lump->ptr = operator new(length);
 	mapfile->seek( offset );
+	mapfile->read( *lump->ptr, length );
+}
 
-	// read the data
-	numleafs = length / sizeof(dleaf_s);
-	leafs = new dleaf_s[numleafs];
+void bspmap::load_all_lumps( void )
+{
+	lumpdata_s lump;
 
-	mapfile->read( leafs, length );
+	// 0 - shaders
+	lump.lumptype = lump_shaders;
+	lump.blocksize = sizeof(dshader_s);
+	lump.numblocks = &numshaders;
+	lump.ptr = (void**)&shaders;
+	load_lump( &lump );
+	con_printf( "%i shaders\n", numshaders );
+
+	// 1 - planes
+	lump.lumptype = lump_planes;
+	lump.blocksize = sizeof(dplane_s);
+	lump.numblocks = &numplanes;
+	lump.ptr = (void**)&planes;
+	load_lump( &lump );
+	con_printf( "%i surfaces\n", numplanes );
+
+	// 2 - lightmaps
+	lump.lumptype = lump_lightmaps;
+	lump.blocksize = LIGHTMAP_BLOCK_LEN;
+	lump.numblocks = &numlightmaps;
+	lump.ptr = (void**)&lightmapdata;
+	load_lump( &lump );
+	con_printf( "%i lightmaps\n", numlightmaps );
+
+	// 3 - surfaces
+	lump.lumptype = lump_surfaces;
+	lump.blocksize = sizeof(dsurface_s);
+	lump.numblocks = &numsurfaces;
+	lump.ptr = (void**)&surfaces;
+	load_lump( &lump );
+	con_printf( "%i surfaces\n", numsurfaces );
+
+	// 8 - leafsurfaces
+	lump.lumptype = lump_leafsurfaces;
+	lump.blocksize = sizeof(uint32_t);
+	lump.numblocks = &numleafsurfaces;
+	lump.ptr = (void**)&leafsurfaces;
+	load_lump( &lump );
+	con_printf( "%i leafsurfaces\n", numleafsurfaces );
+
+	// 8 - leafs
+	lump.lumptype = lump_leafs;
+	lump.blocksize = sizeof(dleaf_s);
+	lump.numblocks = &numleafs;
+	lump.ptr = (void**)&leafs;
+	load_lump( &lump );
+
+	// 14 - entities
+	lump.lumptype = lump_entities;
+	lump.blocksize = 1;
+	lump.numblocks = &entitystringlen;
+	lump.ptr = (void**)&entitystring;
+	load_lump( &lump );
 
 	// count the clusters and areas
 	numclusters = 0;
@@ -59,48 +101,6 @@ void bspmap::lump_loadleafs( void )
 
 	con_printf( "map has %i leafs, %i clusters, %i areas\n",
 		numleafs, numclusters, numareas );
-}
-
-void bspmap::lump_loadleafsurfaces( void )
-{
-	// seek the lump
-	uint32_t offset, length;
-
-	offset = lumps[lump_leafsurfaces].offset;
-	length = lumps[lump_leafsurfaces].length;
-
-	// sanity check
-	if (length % sizeof(uint32_t)) {
-		con_printf( "weird leafsurfaces lump size!\n" );
-		return;
-	}
-
-	numleafsurfaces = length / sizeof(uint32_t);
-	leafsurfaces = new uint32_t[numleafsurfaces];
-	mapfile->seek( offset );
-	mapfile->read( leafsurfaces, length );
-	con_printf( "%i leafsurfaces\n", numleafsurfaces );
-}
-
-void bspmap::lump_loadsurfaces( void )
-{
-	// seek the lump
-	uint32_t offset, length;
-
-	offset = lumps[lump_surfaces].offset;
-	length = lumps[lump_surfaces].length;
-
-	// sanity check
-	if (length % sizeof(dsurface_s)) {
-		con_printf( "weird surfaces lump size!\n" );
-		return;
-	}
-
-	numsurfaces = length / sizeof(dsurface_s);
-	surfaces = new dsurface_s[numsurfaces];
-	mapfile->seek( offset );
-	mapfile->read( surfaces, length );
-	con_printf( "%i surfaces\n", numsurfaces );
 }
 
 void bspmap::open( const char* mname )
@@ -122,17 +122,16 @@ void bspmap::open( const char* mname )
 	
 	mapfile->read( lumps, sizeof(lumps) );
 	
-	lump_loadentities();
-	lump_loadleafs();
-	lump_loadleafsurfaces();
-	lump_loadsurfaces();
+	load_all_lumps();
 }
 
 void bspmap::close( void )
 {
-	delete[] entityString;
-	delete[] leafs;
-	delete[] leafsurfaces;
-	delete[] surfaces;
+	//operator delete();
+	operator delete(shaders);
+	operator delete(entitystring);
+	operator delete(leafs);
+	operator delete(leafsurfaces);
+	operator delete(surfaces);
 	delete mapfile;
 }
