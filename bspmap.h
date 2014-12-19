@@ -84,6 +84,15 @@ typedef struct {
 	uint32_t	numStaticModels;
 } dleaf_s;
 
+typedef enum {
+	MST_BAD,
+	MST_PLANAR,
+	MST_PATCH,
+	MST_TRIANGLE_SOUP,
+	MST_FLARE,
+	MST_TERRAIN
+} mapSurfaceType_s;
+
 typedef struct {
 	uint32_t	shaderNum;
 	uint32_t	fogNum;
@@ -107,6 +116,14 @@ typedef struct {
 
 	float		subdivisions;
 } dsurface_s;
+
+typedef struct {
+	float		xyz[3];
+	float		st[2];
+	float		lightmap[2];
+	float		normal[3];
+	uint8_t		color[4];
+} drawVert_s;
 
 typedef struct {
 	// int
@@ -138,14 +155,16 @@ protected:
 	filestream	*mapfile;
 	bspheader_s	header;
 	lump_s		lumps[lump_max];
-	// allocated
-	char		*entitystring;
+	// allocated (must add in load_all_lumps and close)
 	dleaf_s		*leafs;
 	uint32_t	*leafsurfaces;
 	dsurface_s	*surfaces;
+	drawVert_s	*drawverts;
+	uint32_t	*drawindexes;
 	dshader_s	*shaders;
 	uint8_t		*lightmapdata;
 	dplane_s	*planes;
+	char		*entitystring;
 	// counters
 	uint_t		numshaders;
 	uint_t		entitystringlen;
@@ -154,6 +173,8 @@ protected:
 	uint_t		numareas;
 	uint_t		numleafsurfaces;
 	uint_t		numsurfaces;
+	uint_t		numdrawverts;
+	uint_t		numdrawindexes;
 	uint_t		numlightmaps;
 	uint_t		numplanes;
 };

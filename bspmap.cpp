@@ -5,6 +5,7 @@
 #include "main.h"
 #include "bspmap.h"
 
+void count_clusters_areas( dleaf_s *leafs, uint_t numleafs, uint_t *numclusters, uint_t *numareas );
 
 void bspmap::load_lump( lumpdata_s *lump )
 {
@@ -29,76 +30,60 @@ void bspmap::load_lump( lumpdata_s *lump )
 	mapfile->read( *lump->ptr, length );
 }
 
+void count_clusters_areas( dleaf_s *leafs, uint_t numleafs, uint_t *numclusters, uint_t *numareas )
+{
+	// count the clusters and areas
+	*numclusters = 0;
+	*numareas = 0;
+	
+	for (uint_t i=0;i<numleafs;i++) {
+		dleaf_s *leaf = leafs+i;
+		if (leaf->cluster >= *numclusters)
+			*numclusters = leaf->cluster + 1;
+		if (leaf->area >= *numareas)
+			*numareas = leaf->area + 1;
+	}
+}
+
 void bspmap::load_all_lumps( void )
 {
-	lumpdata_s lump;
-
-	// 0 - shaders
-	lump.lumptype = lump_shaders;
-	lump.blocksize = sizeof(dshader_s);
-	lump.numblocks = &numshaders;
-	lump.ptr = (void**)&shaders;
-	load_lump( &lump );
-	con_printf( "%i shaders\n", numshaders );
-
-	// 1 - planes
-	lump.lumptype = lump_planes;
-	lump.blocksize = sizeof(dplane_s);
-	lump.numblocks = &numplanes;
-	lump.ptr = (void**)&planes;
-	load_lump( &lump );
-	con_printf( "%i surfaces\n", numplanes );
-
-	// 2 - lightmaps
-	lump.lumptype = lump_lightmaps;
-	lump.blocksize = LIGHTMAP_BLOCK_LEN;
-	lump.numblocks = &numlightmaps;
-	lump.ptr = (void**)&lightmapdata;
-	load_lump( &lump );
-	con_printf( "%i lightmaps\n", numlightmaps );
-
-	// 3 - surfaces
-	lump.lumptype = lump_surfaces;
-	lump.blocksize = sizeof(dsurface_s);
-	lump.numblocks = &numsurfaces;
-	lump.ptr = (void**)&surfaces;
-	load_lump( &lump );
-	con_printf( "%i surfaces\n", numsurfaces );
-
-	// 8 - leafsurfaces
-	lump.lumptype = lump_leafsurfaces;
-	lump.blocksize = sizeof(uint32_t);
-	lump.numblocks = &numleafsurfaces;
-	lump.ptr = (void**)&leafsurfaces;
-	load_lump( &lump );
-	con_printf( "%i leafsurfaces\n", numleafsurfaces );
-
-	// 8 - leafs
-	lump.lumptype = lump_leafs;
-	lump.blocksize = sizeof(dleaf_s);
-	lump.numblocks = &numleafs;
-	lump.ptr = (void**)&leafs;
-	load_lump( &lump );
-
-	// 14 - entities
-	lump.lumptype = lump_entities;
-	lump.blocksize = 1;
-	lump.numblocks = &entitystringlen;
-	lump.ptr = (void**)&entitystring;
-	load_lump( &lump );
-
-	// count the clusters and areas
-	numclusters = 0;
-	numareas = 0;
+	lumpdata_s lumplist[] = {
+	/*00*/	{lump_shaders,sizeof(dshader_s), &numshaders,reinterpret_cast<void**>(&shaders)},
+	/*01*/	{lump_planes,sizeof(dplane_s), &numplanes,reinterpret_cast<void**>(&planes)},
+	/*02*/	{lump_lightmaps,LIGHTMAP_BLOCK_LEN, &numlightmaps,reinterpret_cast<void**>(&lightmapdata)},
+	/*03*/	{lump_surfaces,sizeof(dsurface_s), &numsurfaces,reinterpret_cast<void**>(&surfaces)},
+	/*04*/	{lump_drawverts,sizeof(drawVert_s), &numdrawverts,reinterpret_cast<void**>(&drawverts)},
+	/*05*/	{lump_drawindexes,sizeof(uint32_t), &numdrawindexes,reinterpret_cast<void**>(&drawindexes)},
+	/*07*/	{lump_leafsurfaces,sizeof(uint32_t), &numleafsurfaces,reinterpret_cast<void**>(&leafsurfaces)},
+	/*08*/	{lump_leafs,sizeof(dleaf_s), &numleafs,reinterpret_cast<void**>(&leafs)},
+	/*14*/	{lump_entities,sizeof(char), &entitystringlen,reinterpret_cast<void**>(&entitystring)}
+	};
+	int numlumplist = sizeof(lumplist)/sizeof(lumpdata_s);
 	
-	for (int i=0;i<numleafs;i++) {
-		dleaf_s *leaf = leafs+i;
-		if (leaf->cluster >= numclusters)
-			numclusters = leaf->cluster + 1;
-		if (leaf->area >= numareas)
-			numareas = leaf->area + 1;
+	for (int k=0;k<numlumplist;k++) {
+		load_lump( lumplist + k );
 	}
 
+	con_printf( "%i shaders\n", numshaders );
+	con_printf( "%i planes\n", numplanes );
+	con_printf( "%i lightmaps\n", numlightmaps );
+
+	for (uint_t k=0;k<numsurfaces;k++) {
+		dsurface_s *surf = surfaces + k;
+		switch (surf->surfaceType){
+			case MST_BAD: con_printf( "bad surface type\n"); break;
+			case MST_PLANAR: break;
+			case MST_PATCH: break;
+			case MST_TRIANGLE_SOUP: break;
+			case MST_FLARE: break;
+			case MST_TERRAIN: break;
+			default: break;			
+		}
+	}
+
+	con_printf( "%i surfaces\n", numsurfaces );
+	con_printf( "%i leafsurfaces\n", numleafsurfaces );
+	count_clusters_areas( leafs,numleafs, &numclusters, &numareas );
 	con_printf( "map has %i leafs, %i clusters, %i areas\n",
 		numleafs, numclusters, numareas );
 }
@@ -127,11 +112,21 @@ void bspmap::open( const char* mname )
 
 void bspmap::close( void )
 {
-	//operator delete();
-	operator delete(shaders);
-	operator delete(entitystring);
-	operator delete(leafs);
-	operator delete(leafsurfaces);
-	operator delete(surfaces);
+	void* allocated[] = {
+		leafs,
+		leafsurfaces,
+		surfaces,
+		drawverts,
+		drawindexes,
+		shaders,
+		lightmapdata,
+		planes,
+		entitystring
+	};
+	int allocatednum = sizeof(allocated)/sizeof(void*);
+
+	for (int k=0;k<allocatednum;k++)
+		operator delete(allocated[k]);
+
 	delete mapfile;
 }

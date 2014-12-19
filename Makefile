@@ -1,14 +1,14 @@
 CC = clang++
 
 EXECUTABLE = lazybee
-SOURCES = main.cpp files.cpp bspmap.cpp
-HEADERS = main.h files.h bspmap.h
+SOURCES = main.cpp files.cpp bspmap.cpp glfw.cpp
+HEADERS = main.h files.h bspmap.h glfw.h
 
 INCLUDE = include
 LIB = lib
 
-CFLAGS = -c -I $(INCLUDE) -Wall -std=c++11
-LDFLAGS = -L $(LIB)
+CFLAGS = -c -I $(INCLUDE) -Weverything -std=c++11
+LDFLAGS = -L $(LIB) -lglfw -lGLEW -lGL
 
 OBJECTS=$(SOURCES:.cpp=.o)
 

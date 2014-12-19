@@ -10,7 +10,7 @@ class filestream
 public:
 	size_t read( void *buffer, size_t size );
 	void seek( long int offset, bool relative=false );
-	filestream( const char* fname = NULL, size_t size = BUFSIZ )
+	filestream( const char* fname = NULL )
 	{
 		if (fname!=NULL) open(fname);
 	}
@@ -22,7 +22,7 @@ protected:
 	void open( const char* fname );
 	void close( void );
 	// vars
-	FILE *fp = NULL;
+	FILE *fp;
 	void *int_buffer;
 };
 
