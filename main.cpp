@@ -25,11 +25,10 @@
 #include <cstdarg>
 #include "main.h"
 #include "bspmap.h"
-#include <GL/glew.h>
-#include "glfw.h"
+#include "renderer.h"
 
 bspmap *dm2map;
-if_glfw *glfw;
+renderer *r;
 
 void shutdown( void );
 void GLEW_Init( void );
@@ -45,9 +44,8 @@ void con_printf( const char *string, ... )
 int main( int argc, char *argv[] )
 {
 	dm2map = new bspmap("mohdm2.bsp");
-	glfw = new if_glfw("lazybee");
+	r = new renderer("lazybee");
 
-	GLEW_Init();
 	con_printf( "============================================================\n" );
 	con_printf( "Renderer initialized\n" );
 	con_printf( "============================================================\n" );
@@ -59,8 +57,8 @@ int main( int argc, char *argv[] )
 
 	con_printf( "successful!\n" );
 
-	while (!glfw->windowShouldClose())
-		glfw->drawFrame();
+	while ( !r->windowShouldClose() )
+		r->drawFrame();
 
 	shutdown();
 
@@ -69,17 +67,6 @@ int main( int argc, char *argv[] )
 
 void shutdown( void )
 {
-	delete glfw;
+	delete r;
 	delete dm2map;
-}
-
-void GLEW_Init( void )
-{
-	GLenum err;
-
-	err = glewInit();
-	if( err != GLEW_OK) {
-		con_printf("glewInit failed: %s.\n", glewGetErrorString(err) );
-		exit(EXIT_FAILURE);
-	}
 }

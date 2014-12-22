@@ -104,6 +104,13 @@ typedef struct {
 	uint32_t	numStaticModels;
 } dleaf_s;
 
+typedef struct {
+	uint32_t	planeNum;
+	uint32_t	children[2];
+	uint32_t	mins[3];
+	uint32_t	maxs[3];
+} dnode_s;
+
 typedef enum {
 	MST_BAD,
 	MST_PLANAR,
@@ -177,6 +184,7 @@ protected:
 	lump_s		lumps[lump_max];
 	// allocated (must add in load_all_lumps and close)
 	dleaf_s		*leafs;
+	dnode_s		*nodes;
 	uint32_t	*leafsurfaces;
 	dsurface_s	*surfaces;
 	drawVert_s	*drawverts;
@@ -189,6 +197,7 @@ protected:
 	uint_t		numshaders;
 	uint_t		entitystringlen;
 	uint_t		numleafs;
+	uint_t		numnodes;
 	uint_t		numclusters;
 	uint_t		numareas;
 	uint_t		numleafsurfaces;

@@ -76,6 +76,7 @@ void bspmap::load_all_lumps( void )
 	/*05*/	{lump_drawindexes,sizeof(uint32_t), &numdrawindexes,reinterpret_cast<void**>(&drawindexes)},
 	/*07*/	{lump_leafsurfaces,sizeof(uint32_t), &numleafsurfaces,reinterpret_cast<void**>(&leafsurfaces)},
 	/*08*/	{lump_leafs,sizeof(dleaf_s), &numleafs,reinterpret_cast<void**>(&leafs)},
+	/*09*/	{lump_nodes,sizeof(dnode_s), &numnodes,reinterpret_cast<void**>(&nodes)},
 	/*14*/	{lump_entities,sizeof(char), &entitystringlen,reinterpret_cast<void**>(&entitystring)}
 	};
 	int numlumplist = sizeof(lumplist)/sizeof(lumpdata_s);
@@ -91,21 +92,37 @@ void bspmap::load_all_lumps( void )
 	for (uint_t k=0;k<numsurfaces;k++) {
 		dsurface_s *surf = surfaces + k;
 		switch (surf->surfaceType){
-			case MST_BAD: con_printf( "bad surface type\n"); break;
-			case MST_PLANAR: break;
-			case MST_PATCH: break;
-			case MST_TRIANGLE_SOUP: break;
-			case MST_FLARE: break;
-			case MST_TERRAIN: break;
-			default: break;			
+			case MST_BAD:
+				con_printf( "bad surface type\n");
+				break;
+			case MST_PLANAR:
+				if (surf->numVerts ==0)
+					con_printf( "%i numVerts=0\n",k);
+				if (surf->numIndexes ==0)
+					con_printf( "%i numIndexes=0\n",k);
+				break;
+			case MST_PATCH:
+				break;
+			case MST_TRIANGLE_SOUP:
+				break;
+			case MST_FLARE:
+				break;
+			case MST_TERRAIN:
+				break;
+			default:
+				con_printf( "unknown surface type: %i\n",surf->surfaceType);
+				break;			
 		}
 	}
 
 	con_printf( "%i surfaces\n", numsurfaces );
+	con_printf( "%i drawverts\n", numdrawverts );
+	con_printf( "%i drawindexes\n", numdrawindexes );
 	con_printf( "%i leafsurfaces\n", numleafsurfaces );
 	count_clusters_areas( leafs,numleafs, &numclusters, &numareas );
 	con_printf( "map has %i leafs, %i clusters, %i areas\n",
 		numleafs, numclusters, numareas );
+	con_printf( "%i nodes\n", numnodes );
 }
 
 void bspmap::open( const char* mname )
@@ -134,6 +151,7 @@ void bspmap::close( void )
 {
 	void* allocated[] = {
 		leafs,
+		nodes,
 		leafsurfaces,
 		surfaces,
 		drawverts,

@@ -1,5 +1,5 @@
 /*
- * glfw.h - GLFW subsystem
+ * renderer.h - renderer subsystem
  *
  * Copyright (C) 2014 Michael Rieder
  *
@@ -22,27 +22,29 @@
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 
-#ifndef GLFW_H
-#define GLFW_H
+#ifndef RENDERER_H
+#define RENDERER_H
 
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include "tdogl/Program.h"
 
-class if_glfw
+class renderer
 {
 public:
-	void	init( void );
+	void	init( const char *name );
 	void	createwindow( const char *name );
 	void	drawFrame( void );
 	int	windowShouldClose( void );
 	void	shutdown( void );
 	// constructor
-	if_glfw( const char *name=NULL )
+	renderer( const char *name=NULL )
 	{
-		init();
-		if (name) createwindow( name );
-		else createwindow( "OpenGL window" );
+		if (name) init( name );
+		else init( "OpenGL window" );
 	}
-	~if_glfw()
+	~renderer()
 	{
 		shutdown();
 	}
@@ -51,4 +53,4 @@ protected:
 	GLFWwindow* mainwindow;
 };
 
-#endif //GLFW_H
+#endif //RENDERER_H

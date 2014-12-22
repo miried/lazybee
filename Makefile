@@ -1,20 +1,23 @@
 CC = clang++
 
+INCPATH = include
+LIBPATH = lib
+BINPATH = bin
+
 EXECUTABLE = lazybee
-SOURCES = main.cpp files.cpp bspmap.cpp glfw.cpp
-HEADERS = main.h files.h bspmap.h glfw.h
+LIBS = -lglfw -lGLEW -lGL
+TDOGL = tdogl/Shader.cpp tdogl/Program.cpp
+SOURCES = main.cpp files.cpp bspmap.cpp renderer.cpp $(TDOGL)
 
-INCLUDE = include
-LIB = lib
-
-CFLAGS = -c -I $(INCLUDE) -Weverything -std=c++11
-LDFLAGS = -L $(LIB) -lglfw -lGLEW -lGL
+CFLAGS = -c -I $(INCPATH) -Wall -std=c++11
+LDFLAGS = -L $(LIBPATH) $(LIBS)
 
 OBJECTS=$(SOURCES:.cpp=.o)
+EXEFILE=$(BINPATH)/$(EXECUTABLE)
 
-all: $(SOURCES) $(HEADERS) $(EXECUTABLE)
+all: $(SOURCES) $(EXEFILE)
 
-$(EXECUTABLE): $(OBJECTS)
+$(EXEFILE): $(OBJECTS)
 	@echo ""
 	@echo "*** Linking objects ***"
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
@@ -25,8 +28,8 @@ $(EXECUTABLE): $(OBJECTS)
 
 clean:
 	rm $(OBJECTS)
-	rm $(EXECUTABLE)
+	rm $(EXEFILE)
 
 run: all
 	@echo "*** Running ***"
-	./$(EXECUTABLE)
+	cd $(BINPATH);./$(EXECUTABLE)

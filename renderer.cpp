@@ -1,5 +1,5 @@
 /*
- * glfw.cpp - GLFW subsystem
+ * renderer.cpp - renderer subsystem
  *
  * Copyright (C) 2014 Michael Rieder
  *
@@ -24,11 +24,20 @@
 
 // includes
 #include "main.h"
-#include "glfw.h"
+#include "renderer.h"
 
 void error_callback(int error, const char* description);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void renderframe( GLFWwindow* window );
+void GLEW_Init( void );
+
+static void LoadShaders( void );
+static void LoadTriangle( void );
+
+std::vector<tdogl::Shader> shaders;
+tdogl::Program* gProgram = NULL;
+GLuint gVAO = 0;
+GLuint gVBO = 0;
 
 /*
 ================
@@ -44,12 +53,87 @@ void error_callback(int error, const char* description)
 
 /*
 ================
+key_callback
+
+callback for keypress events
+================
+*/
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action == GLFW_PRESS)
+		// Key pressed
+		if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_ENTER )
+			// close
+			glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+// loads the vertex shader and fragment shader, and links them to make the global gProgram
+static void LoadShaders( void )
+{
+	shaders.push_back(tdogl::Shader::shaderFromFile("vertex-shader.txt", GL_VERTEX_SHADER));
+	shaders.push_back(tdogl::Shader::shaderFromFile("fragment-shader.txt", GL_FRAGMENT_SHADER));
+	gProgram = new tdogl::Program(shaders);
+}
+
+// loads a triangle into the VAO and VBO globals: gVAO and gVBO
+static void LoadTriangle()
+{
+	// make and bind the VAO
+	glGenVertexArrays(1, &gVAO);
+	glBindVertexArray(gVAO);
+
+	// make and bind the VBO
+	glGenBuffers(1, &gVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+
+	// Put the three triangle verticies into the VBO
+	GLfloat vertexData[] = {
+		//  X     Y     Z
+		 0.0f, 0.8f, 0.0f,
+		-0.8f,-0.8f, 0.0f,
+		 0.8f,-0.8f, 0.0f,
+	};
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+
+	// connect the xyz to the "vert" attribute of the vertex shader
+	glEnableVertexAttribArray(gProgram->attrib("vert"));
+	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	// unbind the VBO and VAO
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void renderframe( GLFWwindow* window )
+{
+	// clear everything
+	glClearColor(0, 0, 0, 1); // black
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// bind the program (the shaders)
+	glUseProgram(gProgram->object());
+
+	// bind the VAO (the triangle)
+	glBindVertexArray(gVAO);
+
+	// draw the VAO
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	// unbind the VAO
+	glBindVertexArray(0);
+
+	// unbind the program
+	glUseProgram(0);
+}
+
+/*
+================
 GLFW_Init
 
 init GLFW system
 ================
 */
-void if_glfw::init( void )
+void renderer::init( const char *name )
 {
 	glfwSetErrorCallback(error_callback);
 
@@ -57,6 +141,13 @@ void if_glfw::init( void )
 		printf( "glfwInit failed.\n");
 		exit(EXIT_FAILURE);
 	}
+	
+	createwindow( name );
+
+	GLEW_Init();
+
+	LoadShaders();
+	LoadTriangle();
 }
 
 /*
@@ -66,9 +157,9 @@ GLFW_Window
 open GLFW window
 ================
 */
-void if_glfw::createwindow( const char *name )
+void renderer::createwindow( const char *name )
 {
-#define OLD_PROFILE
+//#define OLD_PROFILE
 #ifdef OLD_PROFILE
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
@@ -93,52 +184,12 @@ void if_glfw::createwindow( const char *name )
 
 /*
 ================
-key_callback
-
-callback for keypress events
-================
-*/
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (action == GLFW_PRESS)
-		// Key pressed
-		if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_ENTER )
-			// close
-			glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
-void renderframe( GLFWwindow* window )
-{
-	float ratio;
-	int width, height;
-	glfwGetFramebufferSize(window, &width, &height);
-	ratio = width / (float) height;
-	glViewport(0, 0, width, height);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glRotatef((float) glfwGetTime() * 50.f, 0.f, 0.f, 1.f);
-	glBegin(GL_TRIANGLES);
-	glColor3f(1.f, 0.f, 0.f);
-	glVertex3f(-0.6f, -0.4f, 0.f);
-	glColor3f(0.f, 1.f, 0.f);
-	glVertex3f(0.6f, -0.4f, 0.f);
-	glColor3f(0.f, 0.f, 1.f);
-	glVertex3f(0.f, 0.6f, 0.f);
-	glEnd();
-}
-
-/*
-================
 GLFW_RenderFrame
 
 Frame Renderer
 ================
 */
-void if_glfw::drawFrame( void )
+void renderer::drawFrame( void )
 {
 	// Render New Frame
 	renderframe(mainwindow);
@@ -157,7 +208,7 @@ GLFW_RenderFrame
 Frame Renderer
 ================
 */
-int if_glfw::windowShouldClose( void )
+int renderer::windowShouldClose( void )
 {
 	return glfwWindowShouldClose(mainwindow);
 }
@@ -169,9 +220,25 @@ GLFW_Shutdown
 Cleanup and Shutdown
 ================
 */
-void if_glfw::shutdown( void )
+void renderer::shutdown( void )
 {
 	// Cleanup
+	delete gProgram;
+	shaders.pop_back();
+	shaders.pop_back();
+
 	glfwDestroyWindow(mainwindow);
 	glfwTerminate();
+}
+
+void GLEW_Init( void )
+{
+	GLenum err;
+
+	glewExperimental = GL_TRUE;
+	err = glewInit();
+	if( err != GLEW_OK) {
+		con_printf("glewInit failed: %s.\n", glewGetErrorString(err) );
+		exit(EXIT_FAILURE);
+	}
 }
