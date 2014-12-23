@@ -28,7 +28,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "tdogl/Program.h"
+#include "tdogl/Texture.h"
+#include "tdogl/Camera.h"
 
 class renderer
 {
@@ -36,8 +39,9 @@ public:
 	void	init( const char *name );
 	void	createwindow( const char *name );
 	void	drawFrame( void );
-	int	windowShouldClose( void );
+	void	renderloop( void );
 	void	shutdown( void );
+	void	update(float secondsElapsed);
 	// constructor
 	renderer( const char *name=NULL )
 	{

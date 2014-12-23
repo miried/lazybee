@@ -7,8 +7,12 @@ my humble attempt at a slim and modern OpenGL engine written in C++
  * it reads BSP maps for 3D data
 
 Copyright (C) 2014 Michael Rieder
+
 Main code licensed under GPL version 3
+
 tdogl code by Thomas Dalling licensed under Apache License, Version 2.0
+
+stb_image code by various authors is public domain
 
  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

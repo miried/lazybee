@@ -6,7 +6,8 @@ BINPATH = bin
 
 EXECUTABLE = lazybee
 LIBS = -lglfw -lGLEW -lGL
-TDOGL = tdogl/Shader.cpp tdogl/Program.cpp
+TDOGL = tdogl/Bitmap.cpp tdogl/Camera.cpp tdogl/Program.cpp tdogl/Shader.cpp \
+	tdogl/Texture.cpp
 SOURCES = main.cpp files.cpp bspmap.cpp renderer.cpp $(TDOGL)
 
 CFLAGS = -c -I $(INCPATH) -Wall -std=c++11

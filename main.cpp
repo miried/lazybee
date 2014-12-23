@@ -57,8 +57,7 @@ int main( int argc, char *argv[] )
 
 	con_printf( "successful!\n" );
 
-	while ( !r->windowShouldClose() )
-		r->drawFrame();
+	r->renderloop();
 
 	shutdown();
 
