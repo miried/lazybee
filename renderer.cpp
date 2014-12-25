@@ -190,9 +190,9 @@ void renderer::update(float secondsElapsed)
         gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.right());
     }
     if(glfwGetKey(mainwindow, 'Z')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * -glm::vec3(0,1,0));
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.up());
     } else if(glfwGetKey(mainwindow, 'X')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * glm::vec3(0,1,0));
+        gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.up());
     }
 
     //rotate camera based on mouse movement
@@ -235,7 +235,8 @@ void renderer::init( const char *name )
 	LoadTexture();
 
 	// setup gCamera
-	gCamera.setPosition(glm::vec3(0,0,4));
+	gCamera.setPosition(glm::vec3(0,0,0));
+	gCamera.lookAt(glm::vec3(1,0,0));
 	gCamera.setViewportAspectRatio(SCREEN_SIZE.x / SCREEN_SIZE.y);
 
 	error = glGetError();
