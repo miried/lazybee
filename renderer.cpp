@@ -56,22 +56,6 @@ void error_callback(int error, const char* description)
 	con_printf( "GLFW: An error (%i) occurred: %s\n", error, description );
 }
 
-/*
-================
-key_callback
-
-callback for keypress events
-================
-*/
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (action == GLFW_PRESS)
-		// Key pressed
-		if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_ENTER )
-			// close
-			glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
 // loads the vertex shader and fragment shader, and links them to make the global gProgram
 static void LoadShaders( void )
 {
@@ -79,87 +63,6 @@ static void LoadShaders( void )
 	shaders.push_back(tdogl::Shader::shaderFromFile("fragment-shader.txt", GL_FRAGMENT_SHADER));
 	gProgram = new tdogl::Program(shaders);
 }
-
-// loads a cube into the VAO and VBO globals: gVAO and gVBO
-static void LoadCube()
-{
-	// make and bind the VAO
-	glGenVertexArrays(1, &gVAO);
-	glBindVertexArray(gVAO);
-
-	// make and bind the VBO
-	glGenBuffers(1, &gVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-
-	// Make a cube out of triangles (two triangles per side)
-	GLfloat vertexData[] = {
-		//  X     Y     Z       U     V
-		// bottom
-		-1.0f,-1.0f,-1.0f,   0.0f, 0.0f,
-		 1.0f,-1.0f,-1.0f,   1.0f, 0.0f,
-		-1.0f,-1.0f, 1.0f,   0.0f, 1.0f,
-		 1.0f,-1.0f,-1.0f,   1.0f, 0.0f,
-		 1.0f,-1.0f, 1.0f,   1.0f, 1.0f,
-		-1.0f,-1.0f, 1.0f,   0.0f, 1.0f,
-
-		// top
-		-1.0f, 1.0f,-1.0f,   0.0f, 0.0f,
-		-1.0f, 1.0f, 1.0f,   0.0f, 1.0f,
-		 1.0f, 1.0f,-1.0f,   1.0f, 0.0f,
-		 1.0f, 1.0f,-1.0f,   1.0f, 0.0f,
-		-1.0f, 1.0f, 1.0f,   0.0f, 1.0f,
-		 1.0f, 1.0f, 1.0f,   1.0f, 1.0f,
-
-		// front
-		-1.0f,-1.0f, 1.0f,   1.0f, 0.0f,
-		 1.0f,-1.0f, 1.0f,   0.0f, 0.0f,
-		-1.0f, 1.0f, 1.0f,   1.0f, 1.0f,
-		 1.0f,-1.0f, 1.0f,   0.0f, 0.0f,
-		 1.0f, 1.0f, 1.0f,   0.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,   1.0f, 1.0f,
-
-		// back
-		-1.0f,-1.0f,-1.0f,   0.0f, 0.0f,
-		-1.0f, 1.0f,-1.0f,   0.0f, 1.0f,
-		 1.0f,-1.0f,-1.0f,   1.0f, 0.0f,
-		 1.0f,-1.0f,-1.0f,   1.0f, 0.0f,
-		-1.0f, 1.0f,-1.0f,   0.0f, 1.0f,
-		 1.0f, 1.0f,-1.0f,   1.0f, 1.0f,
-
-		// left
-		-1.0f,-1.0f, 1.0f,   0.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f,   1.0f, 0.0f,
-		-1.0f,-1.0f,-1.0f,   0.0f, 0.0f,
-		-1.0f,-1.0f, 1.0f,   0.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,   1.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f,   1.0f, 0.0f,
-
-		// right
-		 1.0f,-1.0f, 1.0f,   1.0f, 1.0f,
-		 1.0f,-1.0f,-1.0f,   1.0f, 0.0f,
-		 1.0f, 1.0f,-1.0f,   0.0f, 0.0f,
-		 1.0f,-1.0f, 1.0f,   1.0f, 1.0f,
-		 1.0f, 1.0f,-1.0f,   0.0f, 0.0f,
-		 1.0f, 1.0f, 1.0f,   0.0f, 1.0f
-	};
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-
-	// connect the xyz to the "vert" attribute of the vertex shader
-	glEnableVertexAttribArray(gProgram->attrib("vert"));
-	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE,
-			5*sizeof(GLfloat), NULL);
-
-	// connect the uv coords to the "vertTexCoord" attribute of the vertex shader
-	glEnableVertexAttribArray(gProgram->attrib("vertTexCoord"));
-	glVertexAttribPointer(gProgram->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,
-			5*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
-
-	// unbind the VAO
-	glBindVertexArray(0);
-	
-	numverts = 6 * 2 * 3;
-}
-
 
 // loads the file "wooden-crate.jpg" into gTexture
 static void LoadTexture()
@@ -172,35 +75,39 @@ static void LoadTexture()
 // update the scene based on the time elapsed since last update
 void renderer::update(float secondsElapsed)
 {
-    //rotate the cube
-    const GLfloat degreesPerSecond = 0.0f;
-    gDegreesRotated += secondsElapsed * degreesPerSecond;
-    while(gDegreesRotated > 360.0f) gDegreesRotated -= 360.0f;
+	//rotate the cube
+	const GLfloat degreesPerSecond = 0.0f;
+	gDegreesRotated += secondsElapsed * degreesPerSecond;
+	while(gDegreesRotated > 360.0f) gDegreesRotated -= 360.0f;
 
-    //move position of camera based on WASD keys, and XZ keys for up and down
-    const float moveSpeed = 25.0; //units per second
-    if(glfwGetKey(mainwindow, 'S')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.forward());
-    } else if(glfwGetKey(mainwindow, 'W')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.forward());
-    }
-    if(glfwGetKey(mainwindow, 'A')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.right());
-    } else if(glfwGetKey(mainwindow, 'D')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.right());
-    }
-    if(glfwGetKey(mainwindow, 'Z')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.up());
-    } else if(glfwGetKey(mainwindow, 'X')){
-        gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.up());
-    }
+	if (glfwGetKey(mainwindow, GLFW_KEY_ESCAPE) || glfwGetKey(mainwindow, GLFW_KEY_ENTER ))
+		// close
+		glfwSetWindowShouldClose(mainwindow, GL_TRUE);
 
-    //rotate camera based on mouse movement
-    const float mouseSensitivity = 0.1f;
-    double mouseX, mouseY;
-    glfwGetCursorPos(mainwindow, &mouseX, &mouseY);
-    gCamera.offsetOrientation(mouseSensitivity * (float)mouseY, mouseSensitivity * (float)mouseX);
-    glfwSetCursorPos(mainwindow, 0, 0); //reset the mouse, so it doesn't go out of the window
+	//move position of camera based on WASD keys, and XZ keys for up and down
+	const float moveSpeed = 350.0; //units per second
+	if(glfwGetKey(mainwindow, 'S')){
+		gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.forward());
+	} else if(glfwGetKey(mainwindow, 'W')){
+		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.forward());
+	}
+	if(glfwGetKey(mainwindow, 'A')){
+		gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.right());
+	} else if(glfwGetKey(mainwindow, 'D')){
+		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.right());
+	}
+	if(glfwGetKey(mainwindow, 'Z')){
+		gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.up());
+	} else if(glfwGetKey(mainwindow, 'X')){
+		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.up());
+	}
+
+	//rotate camera based on mouse movement
+	const float mouseSensitivity = 0.1f;
+	double mouseX, mouseY;
+	glfwGetCursorPos(mainwindow, &mouseX, &mouseY);
+	gCamera.offsetOrientation(mouseSensitivity * (float)mouseY, mouseSensitivity * (float)mouseX);
+	glfwSetCursorPos(mainwindow, 0, 0); //reset the mouse, so it doesn't go out of the window
 }
 
 /*
@@ -231,7 +138,6 @@ void renderer::init( const char *name )
 	glEnable(GL_DEPTH_CLAMP);
 
 	LoadShaders();
-	LoadCube();
 	LoadTexture();
 
 	// setup gCamera
@@ -277,8 +183,6 @@ void renderer::createwindow( const char *name )
 	glfwSetCursorPos(mainwindow, 0, 0);
 
 	glfwMakeContextCurrent(mainwindow);
-
-	glfwSetKeyCallback(mainwindow, key_callback);
 }
 
 void renderer::setVertexData( float *vertexdata, uint_t numvertices )

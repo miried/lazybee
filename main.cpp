@@ -45,7 +45,12 @@ int main( int argc, char *argv[] )
 {
 	float *vtxData;
 	uint_t nvtx;
-	dm2map = new bspmap("mohdm2.bsp");
+	char *mapstring = "main/maps/DM/mohdm2.bsp";
+	
+	if (argc == 2)
+		mapstring = argv[1];
+
+	dm2map = new bspmap(mapstring);
 	dm2map->getVertexData( &vtxData, &nvtx );
 
 	r = new renderer("lazybee");

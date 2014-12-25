@@ -86,6 +86,9 @@ void bspmap::load_all_lumps( void )
 	}
 
 	con_printf( "%i shaders\n", numshaders );
+	for (uint_t k=0;k<numshaders;k++)
+		con_printf( "%s;", shaders[k].shader );
+	con_printf( "\n" );
 	con_printf( "%i planes\n", numplanes );
 	con_printf( "%i lightmaps\n", numlightmaps );
 
@@ -123,6 +126,8 @@ void bspmap::load_all_lumps( void )
 	con_printf( "map has %i leafs, %i clusters, %i areas\n",
 		numleafs, numclusters, numareas );
 	con_printf( "%i nodes\n", numnodes );
+	
+	//con_printf( "entities %s\n", entitystring );
 }
 
 void bspmap::open( const char* mname )
@@ -169,14 +174,6 @@ void bspmap::close( void )
 	delete mapfile;
 }
 
-void copyVertex( float *dest, void *src )
-{
-	memcpy( dest, src, 5*sizeof(float) );
-	dest[0] /= 100.0;
-	dest[1] /= 100.0;
-	dest[2] /= 100.0;
-}
-
 void bspmap::getVertexData( float **ptr, uint_t *num )
 {
 	// count total number of verts in all surfaces
@@ -191,7 +188,7 @@ void bspmap::getVertexData( float **ptr, uint_t *num )
 		dsurface_s *surf = surfaces + k;
 		for (uint_t l=0;l<surf->numIndexes;l++) {
 			uint_t offset = surf->firstVert+drawindexes[surf->firstIndex+l];
-			copyVertex( vertexdata+vert_counter*5, drawverts+offset );
+			memcpy( vertexdata+vert_counter*5, drawverts+offset, 5*sizeof(float) );
 			vert_counter++;
 		}
 	}
