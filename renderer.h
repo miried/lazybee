@@ -33,6 +33,68 @@
 #include "tdogl/Texture.h"
 #include "tdogl/Camera.h"
 
+/*
+ Represents a textured geometry asset
+
+ Contains everything necessary to draw arbitrary geometry with a single texture:
+
+  - shaders
+  - a texture
+  - a VBO
+  - a VAO
+  - the parameters to glDrawArrays (drawType, drawStart, drawCount)
+ */
+struct ModelAsset {
+	tdogl::Program* shaders;
+	tdogl::Texture* texture;
+	GLuint vbo;
+	GLuint vao;
+	GLenum drawType;
+	GLint drawStart;
+	GLint drawCount;
+	GLfloat shininess;
+	glm::vec3 specularColor;
+
+	ModelAsset() :
+		shaders(NULL),
+		texture(NULL),
+		vbo(0),
+		vao(0),
+		drawType(GL_TRIANGLES),
+		drawStart(0),
+		drawCount(0),
+		shininess(0.0f),
+		specularColor(1.0f, 1.0f, 1.0f)
+	{}
+};
+
+/*
+ Represents an instance of an `ModelAsset`
+
+ Contains a pointer to the asset, and a model transformation matrix to be used when drawing.
+ */
+struct ModelInstance {
+	ModelAsset* asset;
+	glm::mat4 transform;
+
+	ModelInstance() :
+		asset(NULL),
+		transform()
+	{}
+};
+
+/*
+ Represents a point light
+ */
+struct Light {
+	glm::vec4 position;
+	glm::vec3 intensities; //a.k.a. the color of the light
+	float attenuation;
+	float ambientCoefficient;
+	float coneAngle;
+	glm::vec3 coneDirection;
+};
+
 class renderer
 {
 public:
@@ -54,8 +116,17 @@ public:
 		shutdown();
 	}
 protected:
+	void	CreateInstances();
+	void	RenderInstance(const ModelInstance& inst);
+	void	Render();
 	// vars
 	GLFWwindow* mainwindow;
+
+	tdogl::Camera gCamera;
+	//std::vector<tdogl::Shader> shaders;
+	ModelAsset gMap;
+	std::list<ModelInstance> gInstances;
+	std::vector<Light> gLights;
 };
 
 #endif //RENDERER_H

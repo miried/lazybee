@@ -30,6 +30,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
+#include <list>
+#include <sstream>
 
 // Global engine headers
 #include "files.h"

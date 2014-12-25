@@ -86,8 +86,8 @@ void bspmap::load_all_lumps( void )
 	}
 
 	con_printf( "%i shaders\n", numshaders );
-	for (uint_t k=0;k<numshaders;k++)
-		con_printf( "%s;", shaders[k].shader );
+	//for (uint_t k=0;k<numshaders;k++)
+	//	con_printf( "%s;", shaders[k].shader );
 	con_printf( "\n" );
 	con_printf( "%i planes\n", numplanes );
 	con_printf( "%i lightmaps\n", numlightmaps );
@@ -181,14 +181,15 @@ void bspmap::getVertexData( float **ptr, uint_t *num )
 	for (uint_t k=0;k<numsurfaces;k++)
 		num_verts += surfaces[k].numIndexes;
 
-	float *vertexdata = new float[5*num_verts];
+	float *vertexdata = new float[8*num_verts];
 
 	uint_t vert_counter=0;
 	for (uint_t k=0;k<numsurfaces;k++) {
 		dsurface_s *surf = surfaces + k;
 		for (uint_t l=0;l<surf->numIndexes;l++) {
 			uint_t offset = surf->firstVert+drawindexes[surf->firstIndex+l];
-			memcpy( vertexdata+vert_counter*5, drawverts+offset, 5*sizeof(float) );
+			memcpy( vertexdata+vert_counter*8, drawverts+offset, 5*sizeof(float) );
+			memcpy( vertexdata+5+vert_counter*8, drawverts+offset, 3*sizeof(float) );
 			vert_counter++;
 		}
 	}

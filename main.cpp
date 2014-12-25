@@ -45,7 +45,7 @@ int main( int argc, char *argv[] )
 {
 	float *vtxData;
 	uint_t nvtx;
-	char *mapstring = "main/maps/DM/mohdm2.bsp";
+	const char *mapstring = "main/maps/DM/mohdm2.bsp";
 	
 	if (argc == 2)
 		mapstring = argv[1];

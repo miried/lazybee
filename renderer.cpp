@@ -27,22 +27,10 @@
 #include "renderer.h"
 
 void error_callback(int error, const char* description);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void renderframe( GLFWwindow* window );
 void GLEW_Init( void );
 
-static void LoadShaders( void );
-
 const glm::vec2 SCREEN_SIZE(800, 600);
-
-std::vector<tdogl::Shader> shaders;
-tdogl::Texture* gTexture = NULL;
-tdogl::Program* gProgram = NULL;
-tdogl::Camera gCamera;
-GLuint gVAO = 0;
-GLuint gVBO = 0;
-GLfloat gDegreesRotated = 0.0f;
-uint_t numverts = 0;
 
 /*
 ================
@@ -56,54 +44,56 @@ void error_callback(int error, const char* description)
 	con_printf( "GLFW: An error (%i) occurred: %s\n", error, description );
 }
 
-// loads the vertex shader and fragment shader, and links them to make the global gProgram
-static void LoadShaders( void )
-{
-	shaders.push_back(tdogl::Shader::shaderFromFile("vertex-shader.txt", GL_VERTEX_SHADER));
-	shaders.push_back(tdogl::Shader::shaderFromFile("fragment-shader.txt", GL_FRAGMENT_SHADER));
-	gProgram = new tdogl::Program(shaders);
+// returns a new tdogl::Program created from the given vertex and fragment shader filenames
+static tdogl::Program* LoadShaders(const char* vertFilename, const char* fragFilename) {
+    std::vector<tdogl::Shader> shaders;
+    shaders.push_back(tdogl::Shader::shaderFromFile(vertFilename, GL_VERTEX_SHADER));
+    shaders.push_back(tdogl::Shader::shaderFromFile(fragFilename, GL_FRAGMENT_SHADER));
+    return new tdogl::Program(shaders);
 }
 
-// loads the file "wooden-crate.jpg" into gTexture
-static void LoadTexture()
-{
-	tdogl::Bitmap bmp = tdogl::Bitmap::bitmapFromFile("wooden-crate.jpg");
-	bmp.flipVertically();
-	gTexture = new tdogl::Texture(bmp);
+
+// returns a new tdogl::Texture created from the given filename
+static tdogl::Texture* LoadTexture(const char* filename) {
+    tdogl::Bitmap bmp = tdogl::Bitmap::bitmapFromFile(filename);
+    bmp.flipVertically();
+    return new tdogl::Texture(bmp);
 }
 
 // update the scene based on the time elapsed since last update
 void renderer::update(float secondsElapsed)
 {
-	//rotate the cube
-	const GLfloat degreesPerSecond = 0.0f;
-	gDegreesRotated += secondsElapsed * degreesPerSecond;
-	while(gDegreesRotated > 360.0f) gDegreesRotated -= 360.0f;
+	GLFWwindow	*w = mainwindow;
 
-	if (glfwGetKey(mainwindow, GLFW_KEY_ESCAPE) || glfwGetKey(mainwindow, GLFW_KEY_ENTER ))
-		// close
-		glfwSetWindowShouldClose(mainwindow, GL_TRUE);
+	// check for close keys
+	if ( glfwGetKey(w,GLFW_KEY_ESCAPE) || glfwGetKey(w,GLFW_KEY_ENTER) )
+		// close window
+		glfwSetWindowShouldClose(w, GL_TRUE);
 
 	//move position of camera based on WASD keys, and XZ keys for up and down
-	const float moveSpeed = 350.0; //units per second
-	if(glfwGetKey(mainwindow, 'S')){
+	const float moveSpeed = 500.0; //units per second
+	if(glfwGetKey(w, 'S')){
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.forward());
-	} else if(glfwGetKey(mainwindow, 'W')){
+	} else if(glfwGetKey(w, 'W')){
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.forward());
 	}
-	if(glfwGetKey(mainwindow, 'A')){
+	if(glfwGetKey(w, 'A')){
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.right());
-	} else if(glfwGetKey(mainwindow, 'D')){
+	} else if(glfwGetKey(w, 'D')){
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.right());
 	}
-	if(glfwGetKey(mainwindow, 'Z')){
+	if(glfwGetKey(w, 'Z')){
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.up());
-	} else if(glfwGetKey(mainwindow, 'X')){
+	} else if(glfwGetKey(w, 'X')){
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.up());
+	}
+	if ( glfwGetKey(w,'G') ) {
+		const glm::vec3& pos = gCamera.position();
+		con_printf( "pos: %f, %f, %f\n", pos.x, pos.y, pos.z );
 	}
 
 	//rotate camera based on mouse movement
-	const float mouseSensitivity = 0.1f;
+	const float mouseSensitivity = 0.2f;
 	double mouseX, mouseY;
 	glfwGetCursorPos(mainwindow, &mouseX, &mouseY);
 	gCamera.offsetOrientation(mouseSensitivity * (float)mouseY, mouseSensitivity * (float)mouseX);
@@ -135,15 +125,31 @@ void renderer::init( const char *name )
 	glDepthFunc(GL_LESS);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH_CLAMP);
 
-	LoadShaders();
-	LoadTexture();
+	CreateInstances();
 
 	// setup gCamera
 	gCamera.setPosition(glm::vec3(0,0,0));
 	gCamera.lookAt(glm::vec3(1,0,0));
 	gCamera.setViewportAspectRatio(SCREEN_SIZE.x / SCREEN_SIZE.y);
+	gCamera.setNearAndFarPlanes(1.0f, 5000.0f);
+
+	// setup lights
+	Light spotlight;
+	spotlight.position = glm::vec4(380,-1000,650,1);
+	spotlight.intensities = glm::vec3(2,2,2); //strong white light
+	spotlight.attenuation = 0.1f;
+	spotlight.ambientCoefficient = 0.0f; //no ambient light
+	spotlight.coneAngle = 15.0f;
+	spotlight.coneDirection = glm::vec3(0,0,-1);
+
+	Light directionalLight;
+	directionalLight.position = glm::vec4(30, -1400, 380, 0); //w == 0 indications a directional light
+	directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
+	directionalLight.ambientCoefficient = 0.06f;
+
+	gLights.push_back(spotlight);
+	gLights.push_back(directionalLight);
 
 	error = glGetError();
 	if(error != GL_NO_ERROR) {
@@ -185,75 +191,129 @@ void renderer::createwindow( const char *name )
 	glfwMakeContextCurrent(mainwindow);
 }
 
-void renderer::setVertexData( float *vertexdata, uint_t numvertices )
+void renderer::setVertexData( float *vertexData, uint_t numvertices )
 {
-	// make and bind the VAO
-	glGenVertexArrays(1, &gVAO);
-	glBindVertexArray(gVAO);
+	// set all the elements of gWoodenCrate
+	gMap.shaders = LoadShaders("vertex-shader.txt", "fragment-shader.txt");
+	gMap.drawType = GL_TRIANGLES;
+	gMap.drawStart = 0;
+	gMap.drawCount = numvertices;
+	gMap.texture = LoadTexture("wooden-crate.jpg");
+	gMap.shininess = 80.0;
+	gMap.specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+	glGenBuffers(1, &gMap.vbo);
+	glGenVertexArrays(1, &gMap.vao);
 
-	// make and bind the VBO
-	glGenBuffers(1, &gVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+	// bind the VAO
+	glBindVertexArray(gMap.vao);
+
+	// bind the VBO
+	glBindBuffer(GL_ARRAY_BUFFER, gMap.vbo);
 
 	// Make a cube out of triangles (two triangles per side)
-	GLfloat *vertexData = vertexdata;
-	numverts = numvertices;
-
-	glBufferData(GL_ARRAY_BUFFER, numverts*5*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, numvertices*5*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
 
 	// connect the xyz to the "vert" attribute of the vertex shader
-	glEnableVertexAttribArray(gProgram->attrib("vert"));
-	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE,
-			5*sizeof(GLfloat), NULL);
+	glEnableVertexAttribArray(gMap.shaders->attrib("vert"));
+	glVertexAttribPointer(gMap.shaders->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), NULL);
 
 	// connect the uv coords to the "vertTexCoord" attribute of the vertex shader
-	glEnableVertexAttribArray(gProgram->attrib("vertTexCoord"));
-	glVertexAttribPointer(gProgram->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,
-			5*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(gMap.shaders->attrib("vertTexCoord"));
+	glVertexAttribPointer(gMap.shaders->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,  8*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
+
+	// connect the normal to the "vertNormal" attribute of the vertex shader
+	glEnableVertexAttribArray(gMap.shaders->attrib("vertNormal"));
+	glVertexAttribPointer(gMap.shaders->attrib("vertNormal"), 3, GL_FLOAT, GL_TRUE,  8*sizeof(GLfloat), (const GLvoid*)(5 * sizeof(GLfloat)));
 
 	// unbind the VAO
 	glBindVertexArray(0);
 }
 
-/*
-================
-GLFW_RenderFrame
+// convenience function that returns a translation matrix
+glm::mat4 translate(GLfloat x, GLfloat y, GLfloat z) {
+	return glm::translate(glm::mat4(), glm::vec3(x,y,z));
+}
 
-Frame Renderer
-================
-*/
-void renderer::drawFrame( void )
+
+// convenience function that returns a scaling matrix
+glm::mat4 scale(GLfloat x, GLfloat y, GLfloat z) {
+	return glm::scale(glm::mat4(), glm::vec3(x,y,z));
+}
+
+
+//create all the `instance` structs for the 3D scene, and add them to `gInstances`
+void renderer::CreateInstances()
+{
+	ModelInstance dot;
+	dot.asset = &gMap;
+	dot.transform = glm::mat4();
+	gInstances.push_back(dot);
+}
+
+template <typename T>
+void SetLightUniform(tdogl::Program* shaders, const char* propertyName, size_t lightIndex, const T& value) {
+    std::ostringstream ss;
+    ss << "allLights[" << lightIndex << "]." << propertyName;
+    std::string uniformName = ss.str();
+
+    shaders->setUniform(uniformName.c_str(), value);
+}
+
+//renders a single `ModelInstance`
+void renderer::RenderInstance(const ModelInstance& inst)
+{
+	ModelAsset* asset = inst.asset;
+	tdogl::Program* shaders = asset->shaders;
+
+	//bind the shaders
+	shaders->use();
+
+	//set the shader uniforms
+	shaders->setUniform("camera", gCamera.matrix());
+	shaders->setUniform("model", inst.transform);
+	shaders->setUniform("materialTex", 0); //set to 0 because the texture will be bound to GL_TEXTURE0
+	shaders->setUniform("materialShininess", asset->shininess);
+	shaders->setUniform("materialSpecularColor", asset->specularColor);
+	shaders->setUniform("cameraPosition", gCamera.position());
+	shaders->setUniform("numLights", (int)gLights.size());
+
+	for(size_t i = 0; i < gLights.size(); ++i){
+		SetLightUniform(shaders, "position", i, gLights[i].position);
+		SetLightUniform(shaders, "intensities", i, gLights[i].intensities);
+		SetLightUniform(shaders, "attenuation", i, gLights[i].attenuation);
+		SetLightUniform(shaders, "ambientCoefficient", i, gLights[i].ambientCoefficient);
+		SetLightUniform(shaders, "coneAngle", i, gLights[i].coneAngle);
+		SetLightUniform(shaders, "coneDirection", i, gLights[i].coneDirection);
+	}
+
+	//bind the texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, asset->texture->object());
+
+	//bind VAO and draw
+	glBindVertexArray(asset->vao);
+	glDrawArrays(asset->drawType, asset->drawStart, asset->drawCount);
+
+	//unbind everything
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	shaders->stopUsing();
+}
+
+// draws a single frame
+void renderer::Render()
 {
 	// clear everything
 	glClearColor(0, 0, 0, 1); // black
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// bind the program (the shaders)
-	gProgram->use();
+	// render all the instances
+	std::list<ModelInstance>::const_iterator it;
+	for(it = gInstances.begin(); it != gInstances.end(); ++it){
+		RenderInstance(*it);
+	}
 
-	// set the "camera" uniform
-	gProgram->setUniform("camera", gCamera.matrix());
-
-	// set the "model" uniform in the vertex shader, based on the gDegreesRotated global
-	gProgram->setUniform("model", glm::rotate(glm::mat4(), glm::radians(gDegreesRotated), glm::vec3(0,1,0)));
-
-	// bind the texture and set the "tex" uniform in the fragment shader
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gTexture->object());
-	gProgram->setUniform("tex", 0); //set to 0 because the texture is bound to GL_TEXTURE0
-
-	// bind the VAO (the triangle)
-	glBindVertexArray(gVAO);
-
-	// draw the VAO
-	glDrawArrays(GL_TRIANGLES, 0, numverts);
-
-	// unbind the VAO, the program and the texture
-	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	gProgram->stopUsing();
-
-	// New Frame Buffer
+	// swap the display buffers (displays what was just drawn)
 	glfwSwapBuffers(mainwindow);
 }
 
@@ -277,7 +337,7 @@ void renderer::renderloop( void )
 		lastTime = thisTime;
 
 		// draw one frame
-		drawFrame();
+		Render();
 
 		// check for errors
 		GLenum error = glGetError();
@@ -285,10 +345,6 @@ void renderer::renderloop( void )
 			con_printf( "OpenGL Error %i (%s)\n",
 				error, glewGetErrorString(error) );
 		}
-
-		//exit program if escape key is pressed
-		//if(glfwGetKey(mainwindow, GLFW_KEY_ESCAPE))
-		//	glfwSetWindowShouldClose(mainwindow, GL_TRUE);
 	}
 }
 
@@ -302,10 +358,10 @@ Cleanup and Shutdown
 void renderer::shutdown( void )
 {
 	// Cleanup
-	delete gProgram;
-	delete gTexture;
-	shaders.pop_back();
-	shaders.pop_back();
+	//delete gProgram;
+	//delete gTexture;
+	//shaders.pop_back();
+	//shaders.pop_back();
 
 	glfwDestroyWindow(mainwindow);
 	glfwTerminate();
