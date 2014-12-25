@@ -43,8 +43,13 @@ void con_printf( const char *string, ... )
 
 int main( int argc, char *argv[] )
 {
+	float *vtxData;
+	uint_t nvtx;
 	dm2map = new bspmap("mohdm2.bsp");
+	dm2map->getVertexData( &vtxData, &nvtx );
+
 	r = new renderer("lazybee");
+	r->setVertexData( vtxData, nvtx );
 
 	con_printf( "============================================================\n" );
 	con_printf( "Renderer initialized\n" );
@@ -61,6 +66,7 @@ int main( int argc, char *argv[] )
 
 	shutdown();
 
+	delete[] vtxData;
 	return EXIT_SUCCESS;
 }
 

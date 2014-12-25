@@ -42,6 +42,7 @@ tdogl::Camera gCamera;
 GLuint gVAO = 0;
 GLuint gVBO = 0;
 GLfloat gDegreesRotated = 0.0f;
+uint_t numverts = 0;
 
 /*
 ================
@@ -145,14 +146,18 @@ static void LoadCube()
 
 	// connect the xyz to the "vert" attribute of the vertex shader
 	glEnableVertexAttribArray(gProgram->attrib("vert"));
-	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), NULL);
+	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE,
+			5*sizeof(GLfloat), NULL);
 
 	// connect the uv coords to the "vertTexCoord" attribute of the vertex shader
 	glEnableVertexAttribArray(gProgram->attrib("vertTexCoord"));
-	glVertexAttribPointer(gProgram->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,  5*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(gProgram->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,
+			5*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
 
 	// unbind the VAO
 	glBindVertexArray(0);
+	
+	numverts = 6 * 2 * 3;
 }
 
 
@@ -168,12 +173,12 @@ static void LoadTexture()
 void renderer::update(float secondsElapsed)
 {
     //rotate the cube
-    const GLfloat degreesPerSecond = 45.0f;
+    const GLfloat degreesPerSecond = 0.0f;
     gDegreesRotated += secondsElapsed * degreesPerSecond;
     while(gDegreesRotated > 360.0f) gDegreesRotated -= 360.0f;
 
     //move position of camera based on WASD keys, and XZ keys for up and down
-    const float moveSpeed = 5.0; //units per second
+    const float moveSpeed = 25.0; //units per second
     if(glfwGetKey(mainwindow, 'S')){
         gCamera.offsetPosition(secondsElapsed * moveSpeed * -gCamera.forward());
     } else if(glfwGetKey(mainwindow, 'W')){
@@ -223,6 +228,7 @@ void renderer::init( const char *name )
 	glDepthFunc(GL_LESS);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH_CLAMP);
 
 	LoadShaders();
 	LoadCube();
@@ -274,6 +280,36 @@ void renderer::createwindow( const char *name )
 	glfwSetKeyCallback(mainwindow, key_callback);
 }
 
+void renderer::setVertexData( float *vertexdata, uint_t numvertices )
+{
+	// make and bind the VAO
+	glGenVertexArrays(1, &gVAO);
+	glBindVertexArray(gVAO);
+
+	// make and bind the VBO
+	glGenBuffers(1, &gVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+
+	// Make a cube out of triangles (two triangles per side)
+	GLfloat *vertexData = vertexdata;
+	numverts = numvertices;
+
+	glBufferData(GL_ARRAY_BUFFER, numverts*5*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+
+	// connect the xyz to the "vert" attribute of the vertex shader
+	glEnableVertexAttribArray(gProgram->attrib("vert"));
+	glVertexAttribPointer(gProgram->attrib("vert"), 3, GL_FLOAT, GL_FALSE,
+			5*sizeof(GLfloat), NULL);
+
+	// connect the uv coords to the "vertTexCoord" attribute of the vertex shader
+	glEnableVertexAttribArray(gProgram->attrib("vertTexCoord"));
+	glVertexAttribPointer(gProgram->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,
+			5*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
+
+	// unbind the VAO
+	glBindVertexArray(0);
+}
+
 /*
 ================
 GLFW_RenderFrame
@@ -305,7 +341,7 @@ void renderer::drawFrame( void )
 	glBindVertexArray(gVAO);
 
 	// draw the VAO
-	glDrawArrays(GL_TRIANGLES, 0, 6*2*3);
+	glDrawArrays(GL_TRIANGLES, 0, numverts);
 
 	// unbind the VAO, the program and the texture
 	glBindVertexArray(0);

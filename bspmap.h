@@ -164,6 +164,7 @@ typedef struct {
 class bspmap
 {
 public:
+	void getVertexData( float **ptr, uint_t *num );
 	bspmap( const char* mname )
 	{
 		if (mname!=NULL) open(mname);

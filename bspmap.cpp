@@ -168,3 +168,33 @@ void bspmap::close( void )
 
 	delete mapfile;
 }
+
+void copyVertex( float *dest, void *src )
+{
+	memcpy( dest, src, 5*sizeof(float) );
+	dest[0] /= 100.0;
+	dest[1] /= 100.0;
+	dest[2] /= 100.0;
+}
+
+void bspmap::getVertexData( float **ptr, uint_t *num )
+{
+	// count total number of verts in all surfaces
+	uint_t num_verts=0;
+	for (uint_t k=0;k<numsurfaces;k++)
+		num_verts += surfaces[k].numIndexes;
+
+	float *vertexdata = new float[5*num_verts];
+
+	uint_t vert_counter=0;
+	for (uint_t k=0;k<numsurfaces;k++) {
+		dsurface_s *surf = surfaces + k;
+		for (uint_t l=0;l<surf->numIndexes;l++) {
+			uint_t offset = surf->firstVert+drawindexes[surf->firstIndex+l];
+			copyVertex( vertexdata+vert_counter*5, drawverts+offset );
+			vert_counter++;
+		}
+	}
+	*ptr = vertexdata;
+	*num = num_verts;
+}
