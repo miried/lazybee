@@ -27,7 +27,7 @@
 #include "bspmap.h"
 #include "renderer.h"
 
-bspmap *dm2map;
+bspmap *worldmap;
 renderer *r;
 
 void shutdown( void );
@@ -50,8 +50,8 @@ int main( int argc, char *argv[] )
 	if (argc == 2)
 		mapstring = argv[1];
 
-	dm2map = new bspmap(mapstring);
-	dm2map->getVertexData( &vtxData, &nvtx );
+	worldmap = new bspmap(mapstring);
+	worldmap->getVertexData( &vtxData, &nvtx );
 
 	r = new renderer("lazybee");
 	r->setVertexData( vtxData, nvtx );
@@ -65,18 +65,17 @@ int main( int argc, char *argv[] )
 	con_printf( "GLSL version   : %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION) );
 	con_printf( "============================================================\n" );
 
-	con_printf( "successful!\n" );
-
 	r->renderloop();
 
 	shutdown();
 
 	delete[] vtxData;
+	//con_printf( "successful!\n" );
 	return EXIT_SUCCESS;
 }
 
 void shutdown( void )
 {
 	delete r;
-	delete dm2map;
+	delete worldmap;
 }

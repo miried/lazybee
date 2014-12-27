@@ -88,7 +88,7 @@ void bspmap::load_all_lumps( void )
 	con_printf( "%i shaders\n", numshaders );
 	//for (uint_t k=0;k<numshaders;k++)
 	//	con_printf( "%s;", shaders[k].shader );
-	con_printf( "\n" );
+	//con_printf( "\n" );
 	con_printf( "%i planes\n", numplanes );
 	con_printf( "%i lightmaps\n", numlightmaps );
 
@@ -123,7 +123,7 @@ void bspmap::load_all_lumps( void )
 	con_printf( "%i drawindexes\n", numdrawindexes );
 	con_printf( "%i leafsurfaces\n", numleafsurfaces );
 	count_clusters_areas( leafs,numleafs, &numclusters, &numareas );
-	con_printf( "map has %i leafs, %i clusters, %i areas\n",
+	con_printf( "%i leafs, %i clusters, %i areas\n",
 		numleafs, numclusters, numareas );
 	con_printf( "%i nodes\n", numnodes );
 	
@@ -135,17 +135,17 @@ void bspmap::open( const char* mname )
 	mapfile = new filestream( mname );
 	mapfile->read( &header, sizeof(header) );
 
-	if (memcmp(header.id,"2015",4)==0)
-		con_printf( "loading '2015' map\n" );
-	else {
-		con_printf( "unknown map format %c%c%c%c\n",
+	con_printf( "============================================================\n" );
+	con_printf( "opened map file \"%s\"\n", mname );
+	con_printf( "format \"%c%c%c%c\"\n",
 			header.id[0],header.id[1],header.id[2],header.id[3] );
-	}
-	con_printf( "map is BSP v%.2i\n", header.version );
+	con_printf( "version BSP v%.2i\n", header.version );
 	
-	if (header.version == 19)
-		con_printf( "format is MOHAA v1.12, checksum %#.8x\n",
+	
+	if (memcmp(header.id,"2015",4)==0 && header.version == 19)
+		con_printf( " - MOHAA v1.12, checksum %#.8x\n",
 				header.checksum );
+	con_printf( "============================================================\n" );
 	
 	mapfile->read( lumps, sizeof(lumps) );
 	
@@ -177,19 +177,24 @@ void bspmap::close( void )
 void bspmap::getVertexData( float **ptr, uint_t *num )
 {
 	// count total number of verts in all surfaces
+	const uint_t flpervert = 3 + 3 + 3; // pos, texcoord, normal
 	uint_t num_verts=0;
 	for (uint_t k=0;k<numsurfaces;k++)
 		num_verts += surfaces[k].numIndexes;
 
-	float *vertexdata = new float[8*num_verts];
+	// allocate the needed space
+	float *vertexdata = new float[flpervert*num_verts];
 
+	// copy the data
 	uint_t vert_counter=0;
 	for (uint_t k=0;k<numsurfaces;k++) {
 		dsurface_s *surf = surfaces + k;
 		for (uint_t l=0;l<surf->numIndexes;l++) {
 			uint_t offset = surf->firstVert+drawindexes[surf->firstIndex+l];
-			memcpy( vertexdata+vert_counter*8, drawverts+offset, 5*sizeof(float) );
-			memcpy( vertexdata+5+vert_counter*8, drawverts+offset, 3*sizeof(float) );
+			memcpy( vertexdata+vert_counter*flpervert, drawverts[offset].xyz, 3*sizeof(float) ); // xyz
+			memcpy( vertexdata+3+vert_counter*flpervert, drawverts[offset].st, 2*sizeof(float) ); // st
+			vertexdata[3+vert_counter*flpervert+2] = surf->shaderNum; // 3rd texture coord
+			memcpy( vertexdata+6+vert_counter*flpervert, drawverts[offset].normal, 3*sizeof(float) ); // normal
 			vert_counter++;
 		}
 	}

@@ -64,6 +64,7 @@ static tdogl::Texture* LoadTexture(const char* filename) {
 void renderer::update(float secondsElapsed)
 {
 	GLFWwindow	*w = mainwindow;
+	static bool	gpressed = false;
 
 	// check for close keys
 	if ( glfwGetKey(w,GLFW_KEY_ESCAPE) || glfwGetKey(w,GLFW_KEY_ENTER) )
@@ -88,9 +89,12 @@ void renderer::update(float secondsElapsed)
 		gCamera.offsetPosition(secondsElapsed * moveSpeed * gCamera.up());
 	}
 	if ( glfwGetKey(w,'G') ) {
-		const glm::vec3& pos = gCamera.position();
-		con_printf( "pos: %f, %f, %f\n", pos.x, pos.y, pos.z );
-	}
+		if ( !gpressed ) {
+			const glm::vec3& pos = gCamera.position();
+			con_printf( "pos: %f, %f, %f\n", pos.x, pos.y, pos.z );
+			gpressed = true;
+		}
+	} else gpressed = false;
 
 	//rotate camera based on mouse movement
 	const float mouseSensitivity = 0.2f;
@@ -136,16 +140,16 @@ void renderer::init( const char *name )
 
 	// setup lights
 	Light spotlight;
-	spotlight.position = glm::vec4(380,-1000,650,1);
-	spotlight.intensities = glm::vec3(2,2,2); //strong white light
+	spotlight.position = glm::vec4(194.954514, -839.379395, 272.293243,1);
+	spotlight.intensities = glm::vec3(0.1,0,0.9); //strong white light
 	spotlight.attenuation = 0.1f;
-	spotlight.ambientCoefficient = 0.0f; //no ambient light
+	spotlight.ambientCoefficient = 0.06f; //no ambient light
 	spotlight.coneAngle = 15.0f;
-	spotlight.coneDirection = glm::vec3(0,0,-1);
+	spotlight.coneDirection = glm::vec3(1,0,0);
 
 	Light directionalLight;
-	directionalLight.position = glm::vec4(30, -1400, 380, 0); //w == 0 indications a directional light
-	directionalLight.intensities = glm::vec3(0.4,0.3,0.1); //weak yellowish light
+	directionalLight.position = glm::vec4(-2754.604492, -2417.382324, 183.503952, 0); //w == 0 indications a directional light
+	directionalLight.intensities = glm::vec3(0.9,0.0,0.1); //weak yellowish light
 	directionalLight.ambientCoefficient = 0.06f;
 
 	gLights.push_back(spotlight);
@@ -210,20 +214,21 @@ void renderer::setVertexData( float *vertexData, uint_t numvertices )
 	// bind the VBO
 	glBindBuffer(GL_ARRAY_BUFFER, gMap.vbo);
 
-	// Make a cube out of triangles (two triangles per side)
-	glBufferData(GL_ARRAY_BUFFER, numvertices*5*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+	// Send the buffer data
+	const uint_t flpervertex = 3+3+3;
+	glBufferData(GL_ARRAY_BUFFER, numvertices*flpervertex*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
 
 	// connect the xyz to the "vert" attribute of the vertex shader
 	glEnableVertexAttribArray(gMap.shaders->attrib("vert"));
-	glVertexAttribPointer(gMap.shaders->attrib("vert"), 3, GL_FLOAT, GL_FALSE, 8*sizeof(GLfloat), NULL);
+	glVertexAttribPointer(gMap.shaders->attrib("vert"), 3, GL_FLOAT, GL_FALSE, flpervertex*sizeof(GLfloat), NULL);
 
 	// connect the uv coords to the "vertTexCoord" attribute of the vertex shader
 	glEnableVertexAttribArray(gMap.shaders->attrib("vertTexCoord"));
-	glVertexAttribPointer(gMap.shaders->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,  8*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(gMap.shaders->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,  flpervertex*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
 
 	// connect the normal to the "vertNormal" attribute of the vertex shader
 	glEnableVertexAttribArray(gMap.shaders->attrib("vertNormal"));
-	glVertexAttribPointer(gMap.shaders->attrib("vertNormal"), 3, GL_FLOAT, GL_TRUE,  8*sizeof(GLfloat), (const GLvoid*)(5 * sizeof(GLfloat)));
+	glVertexAttribPointer(gMap.shaders->attrib("vertNormal"), 3, GL_FLOAT, GL_TRUE,  flpervertex*sizeof(GLfloat), (const GLvoid*)(6 * sizeof(GLfloat)));
 
 	// unbind the VAO
 	glBindVertexArray(0);
@@ -358,10 +363,8 @@ Cleanup and Shutdown
 void renderer::shutdown( void )
 {
 	// Cleanup
-	//delete gProgram;
-	//delete gTexture;
-	//shaders.pop_back();
-	//shaders.pop_back();
+	delete gMap.shaders;
+	delete gMap.texture;
 
 	glfwDestroyWindow(mainwindow);
 	glfwTerminate();
