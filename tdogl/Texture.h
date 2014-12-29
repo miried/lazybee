@@ -39,10 +39,11 @@ namespace tdogl {
          @param minMagFiler  GL_NEAREST or GL_LINEAR
          @param wrapMode GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, or GL_CLAMP_TO_BORDER
          */
-        Texture(const Bitmap& bitmap,
-                GLint minMagFiler = GL_LINEAR,
-                GLint wrapMode = GL_CLAMP_TO_EDGE);
+        void AddTexture(const Bitmap& bitmap);
         
+        Texture( unsigned int maxwidth, unsigned int maxheight, unsigned int texcount,
+                GLint minMagFiler = GL_LINEAR,
+                GLint wrapMode = GL_CLAMP_TO_EDGE );
         /**
          Deletes the texture object with glDeleteTextures
          */
@@ -67,6 +68,8 @@ namespace tdogl {
         GLuint _object;
         GLfloat _originalWidth;
         GLfloat _originalHeight;
+        unsigned int _texcount;
+        unsigned int _maxtex;
         
         //copying disabled
         Texture(const Texture&);

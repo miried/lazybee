@@ -104,7 +104,7 @@ public:
 	void	renderloop( void );
 	void	shutdown( void );
 	void	update(float secondsElapsed);
-	void	setVertexData( float *vertexdata, uint_t numvertices );
+	void	setVertexData( renderdata_s *renderData );
 	// constructor
 	renderer( const char *name=NULL )
 	{

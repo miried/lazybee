@@ -72,11 +72,11 @@ typedef struct {
 } lump_s;
 
 typedef struct {
-	char		shader[64];
+	const char	shader[64];
 	uint32_t	surfaceFlags;
 	uint32_t	contentFlags;
 	uint32_t	subdivisions;
-	char		fenceMaskImage[64];
+	const char	fenceMaskImage[64];
 } dshader_s;
 
 typedef struct {
@@ -164,7 +164,7 @@ typedef struct {
 class bspmap
 {
 public:
-	void getVertexData( float **ptr, uint_t *num );
+	void getVertexData( renderdata_s *renderData );
 	bspmap( const char* mname )
 	{
 		if (mname!=NULL) open(mname);

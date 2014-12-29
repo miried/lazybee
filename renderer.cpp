@@ -53,11 +53,35 @@ static tdogl::Program* LoadShaders(const char* vertFilename, const char* fragFil
 }
 
 
-// returns a new tdogl::Texture created from the given filename
-static tdogl::Texture* LoadTexture(const char* filename) {
-    tdogl::Bitmap bmp = tdogl::Bitmap::bitmapFromFile(filename);
-    bmp.flipVertically();
-    return new tdogl::Texture(bmp);
+// returns a new tdogl::Texture created from the given filenames
+static tdogl::Texture* LoadTextures(const char** filenames, uint_t texcount)
+{
+	uint_t maxwidth=0, maxheight=0;
+
+	// find maximum tex dimensions
+	for (uint_t k=0;k<texcount;k++) {
+		tdogl::Bitmap bmp = tdogl::Bitmap::bitmapFromFile(filenames[k]);
+		maxwidth = std::max(maxwidth,bmp.width());
+		maxheight = std::max(maxheight,bmp.height());
+	}
+
+	tdogl::Texture *tex = new tdogl::Texture(maxwidth,maxheight,texcount);
+	GLenum error = glGetError();
+	if(error != GL_NO_ERROR) {
+		con_printf( "Texture Error %i (%s)\n",error, glewGetErrorString(error) );
+	}
+
+	for (uint_t k=0;k<texcount;k++) {
+		tdogl::Bitmap bmp = tdogl::Bitmap::bitmapFromFile(filenames[k]);
+		bmp.flipVertically();
+		tex->AddTexture(bmp);
+		GLenum error = glGetError();
+		if(error != GL_NO_ERROR) {
+			con_printf( "AddTexture Error %i (%s)\n",error, glewGetErrorString(error) );
+		}
+	}
+
+	return tex;
 }
 
 // update the scene based on the time elapsed since last update
@@ -157,7 +181,7 @@ void renderer::init( const char *name )
 
 	error = glGetError();
 	if(error != GL_NO_ERROR) {
-		con_printf( "OpenGL Error %i (%s)\n",error, glewGetErrorString(error) );
+		con_printf( "Init OpenGL Error %i (%s)\n",error, glewGetErrorString(error) );
 	}
 }
 
@@ -170,17 +194,10 @@ open GLFW window
 */
 void renderer::createwindow( const char *name )
 {
-//#define OLD_PROFILE
-#ifdef OLD_PROFILE
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 1);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-#else
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
 
 	mainwindow = glfwCreateWindow(SCREEN_SIZE.x, SCREEN_SIZE.y, name, NULL, NULL);
 	if (!mainwindow) {
@@ -195,14 +212,14 @@ void renderer::createwindow( const char *name )
 	glfwMakeContextCurrent(mainwindow);
 }
 
-void renderer::setVertexData( float *vertexData, uint_t numvertices )
+void renderer::setVertexData( renderdata_s *renderData )
 {
 	// set all the elements of gWoodenCrate
 	gMap.shaders = LoadShaders("vertex-shader.txt", "fragment-shader.txt");
 	gMap.drawType = GL_TRIANGLES;
 	gMap.drawStart = 0;
-	gMap.drawCount = numvertices;
-	gMap.texture = LoadTexture("wooden-crate.jpg");
+	gMap.drawCount = renderData->vtxcount;
+	gMap.texture = LoadTextures(renderData->texarray,renderData->texcount);
 	gMap.shininess = 80.0;
 	gMap.specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
 	glGenBuffers(1, &gMap.vbo);
@@ -216,7 +233,7 @@ void renderer::setVertexData( float *vertexData, uint_t numvertices )
 
 	// Send the buffer data
 	const uint_t flpervertex = 3+3+3;
-	glBufferData(GL_ARRAY_BUFFER, numvertices*flpervertex*sizeof(GLfloat), vertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, gMap.drawCount*flpervertex*sizeof(GLfloat), renderData->vtxData, GL_STATIC_DRAW);
 
 	// connect the xyz to the "vert" attribute of the vertex shader
 	glEnableVertexAttribArray(gMap.shaders->attrib("vert"));
@@ -224,7 +241,7 @@ void renderer::setVertexData( float *vertexData, uint_t numvertices )
 
 	// connect the uv coords to the "vertTexCoord" attribute of the vertex shader
 	glEnableVertexAttribArray(gMap.shaders->attrib("vertTexCoord"));
-	glVertexAttribPointer(gMap.shaders->attrib("vertTexCoord"), 2, GL_FLOAT, GL_TRUE,  flpervertex*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(gMap.shaders->attrib("vertTexCoord"), 3, GL_FLOAT, GL_FALSE,  flpervertex*sizeof(GLfloat), (const GLvoid*)(3 * sizeof(GLfloat)));
 
 	// connect the normal to the "vertNormal" attribute of the vertex shader
 	glEnableVertexAttribArray(gMap.shaders->attrib("vertNormal"));
@@ -293,7 +310,7 @@ void renderer::RenderInstance(const ModelInstance& inst)
 
 	//bind the texture
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, asset->texture->object());
+	glBindTexture(GL_TEXTURE_2D_ARRAY, asset->texture->object());
 
 	//bind VAO and draw
 	glBindVertexArray(asset->vao);
@@ -301,7 +318,7 @@ void renderer::RenderInstance(const ModelInstance& inst)
 
 	//unbind everything
 	glBindVertexArray(0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	shaders->stopUsing();
 }
 
@@ -347,7 +364,7 @@ void renderer::renderloop( void )
 		// check for errors
 		GLenum error = glGetError();
 		if(error != GL_NO_ERROR) {
-			con_printf( "OpenGL Error %i (%s)\n",
+			con_printf( "Rendering OpenGL Error %i (%s)\n",
 				error, glewGetErrorString(error) );
 		}
 	}

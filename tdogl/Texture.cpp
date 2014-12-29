@@ -32,26 +32,34 @@ static GLenum TextureFormatForBitmapFormat(Bitmap::Format format, bool srgb)
     }
 }
 
-Texture::Texture(const Bitmap& bitmap, GLint minMagFiler, GLint wrapMode) :
-    _originalWidth((GLfloat)bitmap.width()),
-    _originalHeight((GLfloat)bitmap.height())
+void Texture::AddTexture(const Bitmap& bitmap)
 {
-    glGenTextures(1, &_object);
-    glBindTexture(GL_TEXTURE_2D, _object);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minMagFiler);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, minMagFiler);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
-    glTexImage2D(GL_TEXTURE_2D,
-                 0, 
-                 TextureFormatForBitmapFormat(bitmap.format(), true),
-                 (GLsizei)bitmap.width(), 
-                 (GLsizei)bitmap.height(),
-                 0, 
-                 TextureFormatForBitmapFormat(bitmap.format(), false),
-                 GL_UNSIGNED_BYTE, 
-                 bitmap.pixelBuffer());
-    glBindTexture(GL_TEXTURE_2D, 0);
+	if (_texcount == _maxtex)
+		throw std::runtime_error("more textures than declared max");
+
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, _texcount,
+		bitmap.width(), bitmap.height(), 1,
+		TextureFormatForBitmapFormat(bitmap.format(), false),
+		GL_UNSIGNED_BYTE, bitmap.pixelBuffer());
+	_texcount++;
+}
+
+Texture::Texture(unsigned int maxwidth, unsigned int maxheight, unsigned int texcount, GLint minMagFiler, GLint wrapMode) :
+    _originalWidth((GLfloat)maxwidth),
+    _originalHeight((GLfloat)maxheight),
+    _texcount(0),
+    _maxtex(texcount)
+{
+	glGenTextures(1, &_object);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _object);
+	//glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, minMagFiler);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, minMagFiler);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, wrapMode);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, wrapMode);
+	//glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB, maxwidth, maxheight, texcount);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_SRGB_ALPHA, maxwidth,
+            maxheight, texcount, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 }
 
 Texture::~Texture()

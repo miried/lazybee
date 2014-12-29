@@ -33,6 +33,7 @@
 #include <cmath>
 #include <list>
 #include <sstream>
+#include <algorithm>
 
 // Global engine headers
 #include "files.h"
@@ -42,6 +43,14 @@ typedef float vec3[3];
 
 // main.cpp
 void con_printf( const char *string, ... );
+
+// common
+typedef struct {
+	float *		vtxData;
+	uint_t		vtxcount;
+	const char **	texarray;
+	uint_t		texcount;
+} renderdata_s;
 
 
 #endif //MAIN_H

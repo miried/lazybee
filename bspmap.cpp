@@ -174,7 +174,7 @@ void bspmap::close( void )
 	delete mapfile;
 }
 
-void bspmap::getVertexData( float **ptr, uint_t *num )
+void bspmap::getVertexData( renderdata_s *renderData )
 {
 	// count total number of verts in all surfaces
 	const uint_t flpervert = 3 + 3 + 3; // pos, texcoord, normal
@@ -198,6 +198,11 @@ void bspmap::getVertexData( float **ptr, uint_t *num )
 			vert_counter++;
 		}
 	}
-	*ptr = vertexdata;
-	*num = num_verts;
+	renderData->vtxData = vertexdata;
+	renderData->vtxcount = num_verts;
+
+	renderData->texarray = new const char *[numshaders];
+	for (uint_t k=0;k<numshaders;k++)
+		renderData->texarray[k] = shaders[k].shader;
+	renderData->texcount = numshaders;
 }

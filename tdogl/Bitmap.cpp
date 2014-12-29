@@ -190,14 +190,30 @@ Bitmap::~Bitmap() {
     if(_pixels) free(_pixels);
 }
 
+#include <cstdio>
 Bitmap Bitmap::bitmapFromFile(std::string filePath) {    
-    int width, height, channels;
-    unsigned char* pixels = stbi_load(filePath.c_str(), &width, &height, &channels, 0);
-    if(!pixels) throw std::runtime_error(stbi_failure_reason());
-    
-    Bitmap bmp(width, height, (Format)channels, pixels);
-    stbi_image_free(pixels);
-    return bmp;
+	int width, height, channels;
+	std::string fullpath;
+	std::string fExts[] = { "",".png",".jpg",".tga" };
+	unsigned char* pixels;
+
+	for ( int k=0;k<4;k++ ) {
+		fullpath = "main/" + filePath + fExts[k];
+		pixels = stbi_load(fullpath.c_str(), &width, &height, &channels, 0);
+		if(!pixels)
+			stbi_image_free(pixels);
+		else break;
+	}
+	if(!pixels) {
+		stbi_image_free(pixels);
+		printf( "could not load %s, loading white.png\n", filePath.c_str() );
+		pixels = stbi_load("white.png", &width, &height, &channels, 0);
+	}
+	if(!pixels) throw std::runtime_error(stbi_failure_reason());
+
+	Bitmap bmp(width, height, (Format)channels, pixels);
+	stbi_image_free(pixels);
+	return bmp;
 }
 
 Bitmap::Bitmap(const Bitmap& other) :
@@ -332,11 +348,10 @@ void Bitmap::_set(unsigned width,
     _format = format;
     
     size_t newSize = _width * _height * _format;
-    if(_pixels){
-        _pixels = (unsigned char*)realloc(_pixels, newSize);
-    } else {
-        _pixels = (unsigned char*)malloc(newSize);
-    }
+    if(_pixels)
+        free(_pixels);
+    
+    _pixels = (unsigned char*)malloc(newSize);
     
     if(pixels)
         memcpy(_pixels, pixels, newSize);

@@ -43,18 +43,17 @@ void con_printf( const char *string, ... )
 
 int main( int argc, char *argv[] )
 {
-	float *vtxData;
-	uint_t nvtx;
+	renderdata_s renderData;
 	const char *mapstring = "main/maps/DM/mohdm2.bsp";
 	
 	if (argc == 2)
 		mapstring = argv[1];
 
 	worldmap = new bspmap(mapstring);
-	worldmap->getVertexData( &vtxData, &nvtx );
+	worldmap->getVertexData( &renderData );
 
 	r = new renderer("lazybee");
-	r->setVertexData( vtxData, nvtx );
+	r->setVertexData( &renderData );
 
 	con_printf( "============================================================\n" );
 	con_printf( "Renderer initialized\n" );
@@ -69,7 +68,7 @@ int main( int argc, char *argv[] )
 
 	shutdown();
 
-	delete[] vtxData;
+	delete[] renderData.vtxData;
 	//con_printf( "successful!\n" );
 	return EXIT_SUCCESS;
 }
