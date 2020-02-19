@@ -1,34 +1,26 @@
 lazybee
 =======
 
-my humble attempt at a slim and modern OpenGL engine written in C++
+Lazybee is a slim and modern OpenGL engine designed to easily explore the possibilities of 3D rendering.
+It can display worlds stored with a binary space partionied layout, as developed for Q3-type games.
+It uses GLFW, GLEW and GLM libraries for OpenGL related tasks.
 
- * it uses GLFW, GLEW and GLM libraries for OpenGL related tasks
- * it reads BSP maps for 3D data
+## Usage
 
-Copyright (C) 2014 Michael Rieder
+In order to build Lazybee, you need the OpenGL, GLEW, and GLFW libraries on your system.
 
-Main code licensed under GPL version 3
+To build the project, simply run
 
-tdogl code by Thomas Dalling licensed under Apache License, Version 2.0
+   ```sh
+   $ make
+   ```
 
-stb_image code by various authors is public domain
+Then run `lazybee`.
 
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## License
 
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or (at
- your option) any later version.
+Lazybee is distributed under the terms of both the GNU General Public License, while the `tdogl` code is licensed under the Apache License, Version 2.0.
 
- This program is distributed in the hope that it will be useful, but
- WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- General Public License for more details.
+See [LICENSE-GPL](LICENSE-GPL) and [LICENSE-APACHE](LICENSE-APACHE) for details.
 
- You should have received a copy of the GNU General Public License along
- with this program; if not, write to the Free Software Foundation, Inc.,
- 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-
- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- 
+The `stb_image` code was pusblished in the public domain.
